@@ -1,0 +1,23 @@
+{
+  "title": "TermsAI",
+  "subtitle": "Gib ein Thema ein – die KI erstellt dir ein Beziehungsnetz",
+  "generate": "Graph erstellen",
+  "saveImage": "Bild speichern",
+  "searchGraph": "Graph suchen",
+  "addNode": "Knoten hinzufügen",
+  "regenerate": "Graph neu erstellen",
+  "like": "Gefällt mir",
+  "analysisTopic": "Thema analysieren",
+  "enterTopic": "Thema eingeben...",
+  "nodeCount": "Anzahl der Knoten",
+  "range": "Bereich: 5~20",
+  "aiDisclaimer": "Automatisch von KI erstellt – nur zur Orientierung. Bei Feedback bitte",
+  "contactAuthor": "den Autor kontaktieren",
+  "addNewNode": "Neuen Knoten zum aktuellen Graphen hinzufügen",
+  "enterNewConcept": "Neuen Begriff oder Namen eingeben …",
+  "add": "Hinzufügen",
+  "cancel": "Abbrechen",
+  "search": "Suchen",
+  "graphId": "Graph-ID",
+  "copyIdForSearch": "ID kopieren, um im Graph zu suchen"
+}

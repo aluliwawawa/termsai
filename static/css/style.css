@@ -129,6 +129,34 @@ button:disabled {
     margin-bottom: 1px;
 }
 
+/* 语言选择器样式 */
+.language-selector {
+    margin-left: auto;
+    display: flex;
+    align-items: flex-end;
+}
+
+.language-select {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: white;
+    color: var(--text-color);
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.language-select:hover {
+    border-color: var(--primary-color);
+}
+
+.language-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+}
+
 .main-content {
     display: flex;
     gap: 20px;
@@ -406,6 +434,17 @@ button:disabled {
         flex: 0 0 auto;
     }
 
+    /* 移动端语言选择器样式 */
+    .language-selector {
+        margin-left: auto;
+        margin-top: 5px;
+    }
+
+    .language-select {
+        font-size: 12px;
+        padding: 2px 6px;
+    }
+
     .main-content {
         display: flex;
         flex-direction: column;
@@ -531,30 +570,7 @@ button:disabled {
     }
 }
 
-/* 下载按钮和反馈按钮的通用样式 */
-#download-btn,
-.feedback-btn {
-    position: relative;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-}
-
-#download-btn i,
-.feedback-btn i {
-    font-size: 16px;
-}
+/* 这些样式已经在统一按钮基础样式中定义，此处删除重复定义 */
 
 /* 下载按钮位置 */
 #download-btn {
@@ -591,42 +607,7 @@ button:disabled {
     font-size: 16px;  /* 减小图标尺寸 */
 }
 
-/* PC端样式 */
-@media (min-width: 769px) {
-    #download-btn,
-    .feedback-btn {
-        width: 120px; /* 固定宽度 */
-        padding: 0 16px;
-    }
-
-    .button-text {
-        display: inline-block;
-        margin-left: 8px;
-    }
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-    #download-btn,
-    .feedback-btn {
-        width: 36px;
-    }
-
-    .button-text {
-        display: none;
-    }
-
-    #download-btn {
-        top: 10px;
-        right: 10px;
-    }
-
-    .feedback-buttons {
-        top: 58px;
-        right: 10px;
-        gap: 10px;
-    }
-}
+/* 旧的PC端和移动端样式已删除，使用统一按钮基础样式 */
 
 /* 悬停效果 */
 #download-btn:hover,
@@ -635,134 +616,7 @@ button:disabled {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* 修改下载按钮样式，使其固定在网络图区域右下角 */
-#download-btn {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    padding: 8px 16px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    z-index: 10;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
-}
-
-
-/* 统一图标大小 */
-#download-btn i,
-.feedback-btn i,
-.search-graph-btn i {
-    font-size: 16px;  /* 减小图标尺寸 */
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-    #download-btn {
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    
-    #download-btn,
-    .feedback-btn {
-        width: 28px;  /* 移动端更小的尺寸 */
-        height: 28px;
-    }
-    
-    #download-btn i,
-    .feedback-btn i,
-    .search-graph-btn i {
-        font-size: 14px;  /* 移动端更小的图标 */
-    }
-}
-
-/* PC端按钮样式 */
-@media (min-width: 769px) {
-    #download-btn,
-    .feedback-btn {
-        width: auto;
-        padding: 0 16px;
-        gap: 8px;
-    }
-
-    .button-text {
-        display: inline-block;
-    }
-}
-
-/* 移动端按钮样式 */
-@media (max-width: 768px) {
-    #download-btn,
-    .feedback-btn {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-    }
-
-    .button-text {
-        display: none;
-    }
-}
-
-/* 通用按钮样式 */
-#download-btn,
-.feedback-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 169, 157, 0.9); /* 修改为绿松石色 */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-    height: 36px;
-}
-
-#download-btn i,
-.feedback-btn i,
-.search-graph-btn i {
-    font-size: 16px;
-}
-
-.button-text {
-    white-space: nowrap;
-    font-size: 14px;
-}
-
-/* 按钮禁用状态样式 */
-#download-btn:disabled,
-.feedback-btn:disabled {
-    background-color: rgba(0, 169, 157, 0.4) !important; /* 修改为绿松石色 */
-    cursor: not-allowed;
-    pointer-events: none; /* 禁止所有鼠标/触摸事件 */
-}
-
-/* 移动端特别处理 */
-@media (max-width: 768px) {
-    .feedback-btn:disabled {
-        opacity: 0.5; /* 增加透明度以更明显地显示禁用状态 */
-        -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
-    }
-    
-    .feedback-btn {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-    }
-}
+/* 旧的重复按钮样式已删除，使用统一按钮基础样式 */
 
 /* 新增概念模态弹窗样式 */
 .modal-overlay {
@@ -891,21 +745,31 @@ button:disabled {
     position: absolute;
     right: 20px;
     z-index: 10;
-    width: 120px;
+    width: 180px; /* 进一步增加宽度 */
     height: 36px;
-    padding: 0;
+    padding: 0 8px; /* 添加左右内边距 */
     background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 13px; /* 进一步减小字体 */
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px; /* 进一步减小图标和文字间距 */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     transition: all 0.2s ease;
+    overflow: hidden; /* 隐藏溢出内容 */
+}
+
+/* 按钮文字样式 */
+.button-text {
+    white-space: nowrap; /* 防止文字换行 */
+    overflow: hidden; /* 隐藏溢出内容 */
+    text-overflow: ellipsis; /* 文字溢出时显示省略号 */
+    flex: 1; /* 让文字占据剩余空间 */
+    min-width: 0; /* 允许flex项目缩小到内容以下 */
 }
 
 /* 按钮位置设置 - 统一使用 10px 间距 */
@@ -942,14 +806,22 @@ button:disabled {
     #dislike-btn,
     #like-btn {
         width: 36px;
+        height: 36px;
         right: 10px;
+        padding: 0; /* 移动端移除内边距 */
+        font-size: 16px; /* 恢复图标大小 */
+        gap: 0; /* 移除间距 */
     }
 
     .button-text {
-        display: none;
+        display: none; /* 移动端隐藏文字 */
     }
 
-    i {
+    #download-btn i,
+    #search-graph-btn i,
+    #add-concept-btn i,
+    #dislike-btn i,
+    #like-btn i {
         font-size: 16px;
     }
 }

@@ -1,0 +1,23 @@
+{
+  "title": "TermsAI",
+  "subtitle": "トピックを入力すると、AIが知識グラフを作成します",
+  "generate": "グラフを生成",
+  "saveImage": "画像を保存",
+  "searchGraph": "グラフを検索",
+  "addNode": "ノードを追加",
+  "regenerate": "再生成",
+  "like": "いいね",
+  "analysisTopic": "分析するトピック",
+  "enterTopic": "トピックを入力…",
+  "nodeCount": "ノード数",
+  "range": "範囲：5～20",
+  "aiDisclaimer": "AIによって生成されました。参考としてご利用ください。フィードバックは,",
+  "contactAuthor": "作者に連絡",
+  "addNewNode": "現在のグラフに新しいノードを追加",
+  "enterNewConcept": "新しい概念や人物を入力…",
+  "add": "追加",
+  "cancel": "キャンセル",
+  "search": "検索",
+  "graphId": "グラフID",
+  "copyIdForSearch": "検索用にIDをコピー"
+}

@@ -1,0 +1,23 @@
+{
+  "title": "TermsAI",
+  "subtitle": "Ingresa un tema y la IA generará un gráfico de conocimiento.",
+  "generate": "Generar gráfico",
+  "saveImage": "Guardar imagen",
+  "searchGraph": "Buscar en el gráfico",
+  "addNode": "Agregar nodo",
+  "regenerate": "Regenerar",
+  "like": "Me gusta",
+  "analysisTopic": "Tema de análisis",
+  "enterTopic": "Escribe un tema...",
+  "nodeCount": "Número de nodos",
+  "range": "Rango: 5~20",
+  "aiDisclaimer": "Generado por IA – solo como referencia. Si tienes comentarios, por favor",
+  "contactAuthor": "Contactar al autor",
+  "addNewNode": "Agregar un nuevo nodo al gráfico actual",
+  "enterNewConcept": "Escribe un nuevo concepto o nombre...",
+  "add": "Agregar",
+  "cancel": "Cancelar",
+  "search": "Buscar",
+  "graphId": "ID del gráfico",
+  "copyIdForSearch": "Copiar ID para buscar"
+}

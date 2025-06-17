@@ -1,0 +1,23 @@
+{
+  "title": "TermsAI",
+  "subtitle": "IEnter a topic – AI will generate a relationship graph for you.",
+  "generate": "Generate Graph",
+  "saveImage": "Save as Image",
+  "searchGraph": "Search Graph",
+  "addNode": "Add Node",
+  "regenerate": "Regenerate",
+  "like": "Like",
+  "analysisTopic": "Topic Analysis",
+  "enterTopic": "Enter topic...",
+  "nodeCount": "Number of Nodes",
+  "range": "Range: 5~20",
+  "aiDisclaimer": "AAI-generated – for reference only. For feedback, please",
+  "contactAuthor": "contact author",
+  "addNewNode": "Add new node to current knowledge graph",
+  "enterNewConcept": "Enter a new concept or name...",
+  "add": "Add",
+  "cancel": "Cancel",
+  "search": "Search",
+  "graphId": "Graph ID",
+  "copyIdForSearch": "Copy ID to use in search"
+}

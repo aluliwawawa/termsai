@@ -1,0 +1,23 @@
+{
+  "title": "TermsAI",
+  "subtitle": "Saisis un sujet – l’IA crée un graphe de connaissances pour toi.",
+  "generate": "Générer le graphe",
+  "saveImage": "Enregistrer l’image",
+  "searchGraph": "Rechercher dans le graphe",
+  "addNode": "Ajouter un nœud",
+  "regenerate": "Régénérer",
+  "like": "J’aime",
+  "analysisTopic": "Sujet à analyser",
+  "enterTopic": "Entre un sujet...",
+  "nodeCount": "Nombre de nœuds",
+  "range": "Plage : 5 à 20",
+  "aiDisclaimer": "Généré par l’IA – à titre indicatif. Pour toute remarque,",
+  "contactAuthor": "Contacter l’auteur",
+  "addNewNode": "Ajouter un nouveau nœud au graphe actuel",
+  "enterNewConcept": "Entre un nouveau concept ou nom...",
+  "add": "Ajouter",
+  "cancel": "Annuler",
+  "search": "Rechercher",
+  "graphId": "ID du graphe",
+  "copyIdForSearch": "Copier l’ID pour la recherche"
+}

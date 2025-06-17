@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response, make_response, stream_with_context
+from flask import Flask, render_template, request, jsonify, Response, make_response, stream_with_context, send_from_directory
 from utils import generate_concepts, generate_relationships, create_network_data, parse_json_response, generate_new_concept_detail, pre_judge_person
 from database import DatabaseManager
 from models import Session, KnowledgeGraph
@@ -32,6 +32,15 @@ def index():
         response.set_cookie('user_id', user_id, max_age=31536000, secure=True, httponly=True)  # 1年有效期
         return response
     return render_template('index.html')
+
+@app.route('/language/<language>/<filename>')
+def serve_language_file(language, filename):
+    """提供语言文件"""
+    try:
+        return send_from_directory(f'language/{language}', filename)
+    except Exception as e:
+        logging.error(f"提供语言文件时出错: {str(e)}")
+        return jsonify({'error': 'Language file not found'}), 404
 
 @app.route('/generate_stream', methods=['POST'])
 def generate_stream():
