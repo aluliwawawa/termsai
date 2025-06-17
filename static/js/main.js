@@ -9,6 +9,11 @@ let lastGeneratedTopic = null;
 let lastGeneratedCount = null;
 let customFontLoaded = false;
 
+// 辅助函数：获取翻译文本，如果i18n未加载则返回默认中文
+function t(key, defaultText) {
+    return (window.i18n && window.i18n.t) ? window.i18n.t(key) : defaultText;
+}
+
 // 标识当前图谱是否为新增概念生成的图谱（默认 false）
 window.isNewConceptGraph = false; 
 // 用来记录新增概念场景下上一轮用于 LLM 生成的请求数据，例如：{ topic:"xxx", count:10, ... }
@@ -33,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.fonts.add(font);
         customFontLoaded = true;
     }).catch(err => {
-        console.error('字体加载失败:', err);
+        console.error(window.i18n ? window.i18n.t('fontLoadError') : '字体加载失败:', err);
         customFontLoaded = false;
     });
 
@@ -42,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (abortController) {
                 abortController.abort();
                 isGenerating = false;
-                generateBtn.textContent = '生成图谱';
-                infoBox.textContent = '生成已中止';
+                generateBtn.textContent = t('generate', '生成图谱');
+                infoBox.textContent = t('generationAborted', '生成已中止');
                 progressContainer.style.display = 'none';
                 progressBar.style.width = '0%';
                 // 清理加载动画定时器
@@ -104,12 +109,12 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.style.width = `${progress}%`;
         
         const loadingMessages = [
-            "正在分析节点关系...\n节点太多的话可能需时几分钟",
-            "正在初始化...\n接下来可能需要几分钟",
-            "正在初始化新增节点流程",
-            "正在生成新节点详细描述",
-            "正在合并节点",
-            "正在生成网络数据"
+            t('analyzingRelationships', "正在分析节点关系...\n节点太多的话可能需时几分钟"),
+            t('initializing', "正在初始化...\n接下来可能需要几分钟"),
+            t('initializingNewNode', "正在初始化新增节点流程"),
+            t('generatingNodeDescription', "正在生成新节点详细描述"),
+            t('mergingNodes', "正在合并节点"),
+            t('generatingNetworkData', "正在生成网络数据")
         ];
         
         // 修改这部分逻辑，避免消息闪烁
@@ -161,8 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (abortController) {
                 abortController.abort();
                 isGenerating = false;
-                generateBtn.textContent = '生成图谱';
-                infoBox.textContent = '生成已中止';
+                generateBtn.textContent = t('generate', '生成图谱');
+                infoBox.textContent = t('generationAborted', '生成已中止');
                 progressContainer.style.display = 'none';
                 progressBar.style.width = '0%';
                 if (loadingInterval) {
@@ -184,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log("lastGeneratedTopic:", lastGeneratedTopic);
                 
                 // 在开始重新生成前，先显示加载状态到 info-box
-                infoBox.textContent = '正在重新生成图谱...';
+                infoBox.textContent = t('regeneratingGraph', '正在重新生成图谱...');
                 progressContainer.style.display = 'block';
                 progressBar.style.width = '0%';
                 
@@ -209,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 重新生成之前先检查过滤词
                 const isFiltered = await loadAndCheckFilters(topic);
                 if (isFiltered) {
-                    alert('抱歉，这不是我擅长的主题，问我点别的吧！');
+                    alert(t('notMyExpertise', '抱歉，这不是我擅长的主题，问我点别的吧！'));
                     // 清理图谱显示及相关控件
                     if (network) {
                         network.destroy();
@@ -220,13 +225,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('download-btn').style.display = 'none';
                     document.getElementById('graph-id-display').style.display = 'none';
                     document.getElementById('search-graph-btn').style.display = 'block';
-                    infoBox.textContent = "抱歉，这不是我擅长的主题，问我点别的吧！";
+                    infoBox.textContent = t('notMyExpertise', "抱歉，这不是我擅长的主题，问我点别的吧！");
                     return;
                 }
                 
                 isGenerating = true;
                 abortController = new AbortController();
-                generateBtn.textContent = "生成中，点击中止";
+                generateBtn.textContent = t('generatingInProgress', "生成中，点击中止");
                 generateBtn.disabled = false;
                 document.getElementById('network-loading').style.display = 'flex';
                 likeBtn.disabled = false;
@@ -240,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!topic || !count) {
-                throw new Error('主题或概念数量不能为空');
+                throw new Error(t('topicOrCountEmpty', '主题或概念数量不能为空'));
             }
             
             const response = await fetch('/feedback', {
@@ -338,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 setTimeout(() => {
                                     progressContainer.style.display = 'none';
                                     progressBar.style.width = '0%';
-                                    infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                                    infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                                 }, 500);
                             }
                         } catch (parseError) {
@@ -348,8 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             // 检查是否是过滤内容
                             if (line.includes("[[CONTENT_FILTERED]]")) {
                                 window.stopGeneration = true;
-                                await reader.cancel("过滤内容检测到，提前终止");
-                                throw new Error("抱歉，这不是我擅长的主题，问我点别的吧！");
+                                await reader.cancel(t('contentFiltered', "过滤内容检测到，提前终止"));
+                                throw new Error(t('notMyExpertise', "抱歉，这不是我擅长的主题，问我点别的吧！"));
                             }
                         }
                     }
@@ -372,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             setTimeout(() => {
                                 progressContainer.style.display = 'none';
                                 progressBar.style.width = '0%';
-                                infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                                infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                             }, 500);
                         }
                     } catch (parseError) {
@@ -403,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => {
                             progressContainer.style.display = 'none';
                             progressBar.style.width = '0%';
-                            infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                            infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                         }, 500);
                     }
                 } catch (parseError) {
@@ -415,16 +420,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Feedback error:', error);
             if (error.name === 'AbortError') {
-                infoBox.textContent = '生成已中止';
+                infoBox.textContent = t('generationAborted', '生成已中止');
             } else {
-                infoBox.textContent = '生成失败，请重试';
+                infoBox.textContent = t('generationFailed', '生成失败，请重试');
             }
             progressContainer.style.display = 'none';
             progressBar.style.width = '0%';
             document.getElementById('download-btn').style.display = 'none';
         } finally {
             isGenerating = false;
-            generateBtn.textContent = '生成图谱';
+            generateBtn.textContent = t('generate', '生成图谱');
             // 对于点赞反馈保持 likeBtn 禁用状态；重新生成反馈则恢复
             if (!isLike) {
                 likeBtn.disabled = false;
@@ -471,21 +476,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const count = parseInt(conceptCount.value);
         
         if (!topic) {
-            alert('请输入主题');
+            alert(t('pleaseEnterTopic', '请输入主题'));
             return;
         }
         
         // 在生成之前检查过滤词
         const isFiltered = await loadAndCheckFilters(topic);
         if (isFiltered) {
-            alert('抱歉，这不是我擅长的主题，问我点别的吧！');
+            alert(t('notMyExpertise', '抱歉，这不是我擅长的主题，问我点别的吧！'));
             return;
         }
         
         isGenerating = true;
         abortController = new AbortController();
         
-        generateBtn.textContent = "生成中，点击中止";
+        generateBtn.textContent = t('generatingInProgress', "生成中，点击中止");
         
         // 显示 loading 层
         document.getElementById('network-loading').style.display = 'flex';
@@ -520,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     network = null;
                 }
                 document.getElementById('network').innerHTML = '';
-                infoBox.textContent = '正在生成新的图谱...';
+                infoBox.textContent = t('generatingNewGraph', '正在生成新的图谱...');
                 
                 progressContainer.style.display = 'block';
                 feedbackButtons.style.display = 'none';
@@ -580,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 setTimeout(() => {
                                     progressContainer.style.display = 'none';
                                     progressBar.style.width = '0%';
-                                    infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                                    infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                                 }, 500);
                             }
                         } catch (parseError) {
@@ -588,8 +593,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             // 如果发现过滤标记，则及时终止
                             if (line.includes("[[CONTENT_FILTERED]]")) {
                                 window.stopGeneration = true;
-                                await reader.cancel("过滤内容检测到，提前终止");
-                                infoBox.textContent = "抱歉，这不是我擅长的主题，问我点别的吧！";
+                                await reader.cancel(t('contentFiltered', "过滤内容检测到，提前终止"));
+                                infoBox.textContent = t('notMyExpertise', "抱歉，这不是我擅长的主题，问我点别的吧！");
                                 
                                 document.getElementById('graph-id-display').style.display = 'none';
                                 document.getElementById('search-graph-btn').style.display = 'block';
@@ -648,13 +653,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 progressContainer.style.display = 'none';
                 progressBar.style.width = '0%';
             } else {
-                infoBox.textContent = '生成失败，请重试';
+                infoBox.textContent = t('generationFailed', '生成失败，请重试');
             }
             progressContainer.style.display = 'none';
             progressBar.style.width = '0%';
         } finally {
             isGenerating = false;
-            generateBtn.textContent = '生成图谱';
+            generateBtn.textContent = t('generate', '生成图谱');
             if (abortController) {
                 abortController = null;
             }
@@ -786,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 });
-                infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
             }
         });
 
@@ -845,12 +850,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 createNetwork(data.data.network_data);
                 // 不显示反馈按钮
                 feedbackButtons.style.display = 'none';
-                infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
             } else {
-                throw new Error("没有收到图谱数据");
+                throw new Error(t('defaultGraphLoadFailed', "默认图谱加载失败: 没有找到默认图谱"));
             }
         } catch (error) {
-            infoBox.textContent = '默认图谱加载失败: ' + error.message;
+            infoBox.textContent = error.message;
         } finally {
             document.getElementById('network-loading').style.display = 'none';
         }
@@ -878,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function searchGraphFromUrl(graphId) {
         try {
             document.getElementById('network-loading').style.display = 'flex';
-            infoBox.textContent = '正在加载指定图谱...';
+            infoBox.textContent = t('loadingSpecifiedGraph', '正在加载指定图谱...');
             
             const response = await fetch('/search_graph', {
                 method: 'POST',
@@ -907,10 +912,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchGraphBtn.style.display = 'block';
                 createNetwork(data.data.network_data);
                 document.getElementById('download-btn').style.display = 'block';
-                infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
             }
         } catch (error) {
-            infoBox.textContent = '加载图谱失败：' + error.message;
+            infoBox.textContent = t('loadingGraphFailed', '加载图谱失败：') + error.message;
         } finally {
             document.getElementById('network-loading').style.display = 'none';
         }
@@ -938,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmAddConceptBtn.addEventListener('click', async () => {
         const newConcept = newConceptInput.value.trim();
         if (!newConcept) {
-            alert('请输入新概念/人物');
+            alert(t('pleaseEnterNewConcept', '请输入新概念/人物'));
             return;
         }
         modalOverlay.style.display = 'none';
@@ -948,16 +953,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const baseGraphId = currentGraphId;
         
         document.getElementById('network-loading').style.display = 'flex';
-        infoBox.textContent = '正在新增概念';
-        
+        infoBox.textContent = t('addingConcept', '正在新增概念');
+
         // 显示进度条
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
-        
+
         // 设置生成状态和中止控制器
         isGenerating = true;
         abortController = new AbortController();
-        generateBtn.textContent = "生成中，点击中止";
+        generateBtn.textContent = t('generatingInProgress', "生成中，点击中止");
         
         try {
             const topic = topicInput.value.trim();
@@ -1044,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 setTimeout(() => {
                                     progressContainer.style.display = 'none';
                                     progressBar.style.width = '0%';
-                                    infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                                    infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                                 }, 500);
 
                                 // 设置新增概念标记
@@ -1061,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             // 检测到内容过滤标记或其它异常时，主动报错中断
                             if (segment.includes("[[CONTENT_FILTERED]]")) {
-                                throw new Error("抱歉，这不是我擅长的主题，问我点别的吧！");
+                                throw new Error(t('notMyExpertise', "抱歉，这不是我擅长的主题，问我点别的吧！"));
                             }
                             throw parseError;
                         }
@@ -1090,9 +1095,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             new_concept: newConcept,
                             base_graph_id: baseGraphId
                         };
-                        infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                        infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                     } else {
-                        throw new Error("没有收到图谱数据");
+                        throw new Error(t('getGraphDataFailed', "没有收到图谱数据"));
                     }
                 } catch (error) {
                     console.error('Add concept JSON parse error:', error);
@@ -1104,13 +1109,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 判断是否是被中断
             if (error.name === 'AbortError') {
-                infoBox.textContent = '生成已中止';
+                infoBox.textContent = t('generationAborted', '生成已中止');
             } else {
-                infoBox.textContent = '新增节点失败，请重试';
+                infoBox.textContent = t('addNodeFailed', '新增节点失败，请重试');
             }
         } finally {
             isGenerating = false;
-            generateBtn.textContent = '生成图谱';
+            generateBtn.textContent = t('generate', '生成图谱');
             if (abortController) {
                 abortController = null;
             }
@@ -1125,11 +1130,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 为复制图谱编号添加事件监听
     document.getElementById('copy-icon').addEventListener('click', function() {
         const graphId = document.getElementById('graph-id-value').innerText;
-        if (graphId && graphId !== '未生成') {
+        if (graphId && graphId !== t('notGenerated', '未生成')) {
             navigator.clipboard.writeText(graphId).then(() => {
-                alert('图谱编号已复制到剪贴板');
+                alert(t('graphIdCopied', '图谱编号已复制到剪贴板'));
             }).catch((err) => {
-                alert('复制失败，请重试');
+                alert(t('copyFailed', '复制失败，请重试'));
             });
         }
     });
@@ -1153,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmSearchGraphBtn.addEventListener('click', async () => {
         const graphIdToSearch = searchGraphInput.value.trim();
         if (!graphIdToSearch) {
-            alert('请输入图谱编号');
+            alert(t('pleaseEnterGraphId', '请输入图谱编号'));
             return;
         }
         // 关闭模态弹窗并清空输入框
@@ -1162,16 +1167,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 显示加载遮罩和提示信息
         document.getElementById('network-loading').style.display = 'flex';
-        infoBox.textContent = '正在搜寻图谱';
-        
+        infoBox.textContent = t('searchingGraph', '正在搜寻图谱');
+
         // 显示进度条
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
-        
+
         // 设置生成状态和中止控制器
         isGenerating = true;
         abortController = new AbortController();
-        generateBtn.textContent = "生成中，点击中止";
+        generateBtn.textContent = t('generatingInProgress', "生成中，点击中止");
         
         try {
             const response = await fetch('/search_graph', {
@@ -1238,13 +1243,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 setTimeout(() => {
                                     progressContainer.style.display = 'none';
                                     progressBar.style.width = '0%';
-                                    infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                                    infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                                 }, 500);
                             }
                         } catch (parseError) {
                             console.error('Search graph parse error:', parseError, 'for line:', line);
                             if (line.includes("[[CONTENT_FILTERED]]")) {
-                                throw new Error("抱歉，这不是我擅长的主题，问我点别的吧！");
+                                throw new Error(t('notMyExpertise', "抱歉，这不是我擅长的主题，问我点别的吧！"));
                             }
                             throw parseError;
                         }
@@ -1275,13 +1280,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => {
                             progressContainer.style.display = 'none';
                             progressBar.style.width = '0%';
-                            infoBox.textContent = '点击节点查看详细信息，图谱可缩放及下载';
+                            infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
                         }, 500);
                         // 缓存当前图谱的主题和概念数量，用于"重新生成"
                         lastGeneratedTopic = data.data.topic;
                         lastGeneratedCount = data.data.concept_count;
                     } else {
-                        throw new Error("没有收到图谱数据");
+                        throw new Error(t('getGraphDataFailed', "没有收到图谱数据"));
                     }
                 } catch (error) {
                     console.error('Search graph JSON parse error:', error);
@@ -1291,15 +1296,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Search graph network or processing error:', error);
             if (error.name === 'AbortError') {
-                infoBox.textContent = '搜寻已中止';
+                infoBox.textContent = t('searchAborted', '搜寻已中止');
             } else {
-                infoBox.textContent = '没能找到图谱，请重试';
+                infoBox.textContent = t('graphNotFound', '没能找到图谱，请重试');
             }
             progressContainer.style.display = 'none';
             progressBar.style.width = '0%';
         } finally {
             isGenerating = false;
-            generateBtn.textContent = '生成图谱';
+            generateBtn.textContent = t('generate', '生成图谱');
             generateBtn.disabled = false;
             likeBtn.disabled = false;
             dislikeBtn.disabled = false;
@@ -1322,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('获取图谱数据失败');
+                    throw new Error(t('getGraphDataFailed', '获取图谱数据失败'));
                 }
                 return response.json();
             })
@@ -1339,11 +1344,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.network_data) {
                     createNetwork(data.network_data);
                     // 如果需要，也可以提示用户这是已存在的图谱
-                    infoBox.textContent = '当前图谱加载成功，可点击"重新生成"重新生成图谱';
+                    infoBox.textContent = t('currentGraphLoaded', '当前图谱加载成功，可点击"重新生成"重新生成图谱');
                 }
             })
             .catch(err => {
-                console.error('加载 graph_id 数据失败:', err);
+                console.error(t('getGraphDataFailed', '加载 graph_id 数据失败:'), err);
             });
         }
     }
@@ -1365,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const qrImage = document.createElement('img');
             qrImage.src = '/static/images/qr.jpg';
             qrImage.className = 'qr-image';
-            qrImage.alt = '反馈二维码';
+            qrImage.alt = t('feedbackQRCode', '反馈二维码');
             
             // 添加到页面
             qrOverlay.appendChild(qrImage);
@@ -1534,7 +1539,7 @@ document.getElementById('download-btn').addEventListener('click', async function
             const qrTextY = qrY + finalQrSize / 2; // 垂直居中对齐二维码
             
             // 绘制两行文字
-            const lines = ['扫码查看', '说人话的知识图谱'];
+            const lines = [t('scanToView', '扫码查看'), t('humanReadableKnowledgeGraph', '说人话的知识图谱')];
             const lineHeight = qrTextFontSize * 1.2; // 行高为字号的 1.2 倍
             lines.forEach((line, index) => {
                 finalCtx.fillText(line, qrTextX, qrTextY + (index - 0.5) * lineHeight);
