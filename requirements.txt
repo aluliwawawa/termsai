@@ -2,3 +2,6 @@ flask
 sqlalchemy
 openai
 dotenv
+werkzeug==2.2.3
+Flask-Babel==2.0.0
+
