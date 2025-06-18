@@ -46,7 +46,8 @@ def serve_language_file(language, filename):
 def generate_stream():
     topic = request.json.get('topic')
     count = request.json.get('count', 10)
-    
+    selected_model = request.json.get('model')  # 获取前端选择的模型
+
     if not topic:
         return jsonify({'error_key': 'server_please_enter_topic'}), 400
     if not 5 <= count <= 20:
@@ -77,24 +78,24 @@ def generate_stream():
                 return
 
             # 预判主题是否为人物
-            is_person = pre_judge_person(topic)
+            is_person = pre_judge_person(topic, selected_model)
             logging.info(f"主题 '{topic}' 是否为人物: {is_person}")
-            
+
             # 第一阶段：流式生成概念
             yield "data: " + json.dumps({
                 'status': 'generating_concepts',
                 'progress': 20,
                 'message_key': 'server_initializing'
             }) + '\n\n'
-            
+
             accumulated_text = ""
             generated_concepts = []
             key_pattern = re.compile(r'"([^"]+)"\s*:')
             last_update_time = 0
             dot_phase = 0
-            
+
             # 调用生成概念函数，启用流式输出
-            for chunk in generate_concepts(topic, count, is_person, True):
+            for chunk in generate_concepts(topic, count, is_person, True, selected_model):
                 accumulated_text += chunk
                 current_time = time.time()
                 # 每0.3秒更新一次进度
@@ -124,7 +125,7 @@ def generate_stream():
             
             # 解析完整的概念 JSON 文本
             concepts = parse_json_response(accumulated_text, error_context=f"处理主体 '{topic}' 的节点生成结果时")
-            relationships = generate_relationships(concepts, is_person)
+            relationships = generate_relationships(concepts, is_person, selected_model)
             network_data = create_network_data(concepts, relationships)
             
             # 保存生成的图谱和is_person标记
@@ -169,6 +170,7 @@ def feedback():
         user_id = request.cookies.get('user_id')
         topic = request.json.get('topic')
         count = request.json.get('count')
+        selected_model = request.json.get('model')  # 获取前端选择的模型
         
         # 参数校验
         if graph_id is None:
@@ -248,7 +250,7 @@ def feedback():
                             # 获取is_person值，如果不存在则预判
                             is_person = getattr(graph, 'is_person', None)
                             if is_person is None:
-                                is_person = pre_judge_person(topic)
+                                is_person = pre_judge_person(topic, selected_model)
                                 logging.info(f"预判主题 '{topic}' 是否为人物: {is_person}")
                         
                         yield "data: " + json.dumps({
@@ -265,7 +267,7 @@ def feedback():
                             }) + '\n\n'
                             return
                         
-                        new_concept_detail = generate_new_concept_detail(new_concept_input, is_person)
+                        new_concept_detail = generate_new_concept_detail(new_concept_input, is_person, selected_model)
                         updated_concepts = existing_concepts.copy()
                         updated_concepts.update(new_concept_detail)
                         
@@ -281,7 +283,7 @@ def feedback():
                             'message_key': 'server_analyzing_relationships'
                         }) + '\n\n'
                         
-                        updated_relationships = generate_relationships(updated_concepts, is_person)
+                        updated_relationships = generate_relationships(updated_concepts, is_person, selected_model)
                         network_data = create_network_data(updated_concepts, updated_relationships)
                         
                         new_graph_id = DatabaseManager.save_knowledge_graph(
@@ -319,7 +321,7 @@ def feedback():
                 def generate():
                     try:
                         # 预判主题是否为人物
-                        is_person = pre_judge_person(topic)
+                        is_person = pre_judge_person(topic, selected_model)
                         logging.info(f"预判主题 '{topic}' 是否为人物: {is_person}")
                         
                         yield "data: " + json.dumps({
@@ -334,7 +336,7 @@ def feedback():
                         last_update_time = 0
                         dot_phase = 0
                         
-                        for chunk in generate_concepts(topic, count, is_person, True):
+                        for chunk in generate_concepts(topic, count, is_person, True, selected_model):
                             accumulated_text += chunk
                             current_time = time.time()
                             if current_time - last_update_time >= 0.3:
@@ -365,7 +367,7 @@ def feedback():
                             'message_key': 'server_analyzing_relationships'
                         }) + '\n\n'
                         
-                        relationships = generate_relationships(concepts, is_person)
+                        relationships = generate_relationships(concepts, is_person, selected_model)
                         network_data = create_network_data(concepts, relationships)
                         
                         new_graph_id = DatabaseManager.save_knowledge_graph(
@@ -417,6 +419,7 @@ def add_concept():
     try:
         graph_id = request.json.get('graph_id')
         new_concept_input = request.json.get('new_concept')
+        selected_model = request.json.get('model')  # 获取前端选择的模型
         if not graph_id or not new_concept_input:
             return jsonify({'error_key': 'server_missing_params'}), 400
 
@@ -439,7 +442,7 @@ def add_concept():
                     is_person = getattr(graph, 'is_person', None)
                     # 如果数据库中没有保存is_person（老数据），则重新判断
                     if is_person is None:
-                        is_person = pre_judge_person(topic)
+                        is_person = pre_judge_person(topic, selected_model)
                         logging.info(f"预判主题 '{topic}' 是否为人物: {is_person}")
 
                 # 第一阶段：初始化
@@ -455,7 +458,7 @@ def add_concept():
                     'progress': 30,
                     'message_key': 'server_generating_node_desc'
                 }) + '\n\n'
-                new_concept_detail = generate_new_concept_detail(new_concept_input, is_person)
+                new_concept_detail = generate_new_concept_detail(new_concept_input, is_person, selected_model)
     
                 # 第三阶段：合并概念
                 updated_concepts = existing_concepts.copy()
@@ -472,7 +475,7 @@ def add_concept():
                     'progress': 70,
                     'message_key': 'server_analyzing_relationships'
                 }) + '\n\n'
-                updated_relationships = generate_relationships(updated_concepts, is_person)
+                updated_relationships = generate_relationships(updated_concepts, is_person, selected_model)
     
                 # 第五阶段：生成网络数据
                 network_data = create_network_data(updated_concepts, updated_relationships)

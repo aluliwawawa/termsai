@@ -547,13 +547,16 @@ document.addEventListener('DOMContentLoaded', function() {
             likeBtn.disabled = false;
             dislikeBtn.disabled = false;
             
+            // 获取选择的模型
+            const selectedModel = document.getElementById('llm-selector').value;
+
             const response = await fetch('/generate_stream?t=' + new Date().getTime(), {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Cache-Control': 'no-cache'
                 },
-                body: JSON.stringify({ topic: topic, count: count }),
+                body: JSON.stringify({ topic: topic, count: count, model: selectedModel }),
                 signal: abortController.signal
             });
 

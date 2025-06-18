@@ -107,27 +107,31 @@ def parse_json_response(text: str, error_context: str) -> dict:
             )
 
 @retry_on_error(max_retries=3)
-def call_llm_api(messages: list, context: str, stream: bool = False):
+def call_llm_api(messages: list, context: str, stream: bool = False, selected_model: str = None):
     """
     调用LLM API的通用函数，支持流式输出，遇到限流时自动切换模型
     :param messages: 消息列表
     :param context: 错误上下文描述
     :param stream: 是否启用流式输出
+    :param selected_model: 指定使用的模型，如果为None则使用默认模型
     :return: 若 stream 为 False，则返回完整响应文本；若为 True，则返回生成器逐块yield内容
     """
     global model  # 添加全局声明以便修改model变量
+
+    # 简化：如果指定了模型，则使用指定的模型，否则使用全局默认模型
+    current_model = selected_model if selected_model else model
     
     try:
-        ai_client = client(model)
+        ai_client = client(current_model)
         kwargs = {
-            "model": model,
+            "model": current_model,
             "messages": messages,
             "temperature": 0.7
         }
         if stream:
             kwargs["stream"] = True
-        
-        if model in ["deepseek-ai/DeepSeek-V3", "Pro/deepseek-ai/DeepSeek-V3"]:
+
+        if current_model in ["deepseek-ai/DeepSeek-V3", "Pro/deepseek-ai/DeepSeek-V3"]:
             response = ai_client.chat.completions.create(**kwargs)
         else:
             if stream:
@@ -151,16 +155,22 @@ def call_llm_api(messages: list, context: str, stream: bool = False):
     except Exception as e:
         error_str = str(e)
         if "429" in error_str:
-            # 定义备用模型列表
-            current_model = model
-            
-            # 选择一个不同于当前模型的备用模型
-            for backup_model in backup_models:
-                if backup_model != current_model:
-                    print(f"遇到限流，切换到备用模型: {backup_model}")
-                    model = backup_model
-                    # 递归调用自身，使用新模型重试
-                    return call_llm_api(messages, context, stream)
+            # 如果是用户指定的模型遇到限流，尝试使用备用模型
+            if selected_model:
+                # 对于用户指定的模型，尝试使用默认的备用模型
+                for backup_model in backup_models:
+                    if backup_model != current_model:
+                        print(f"用户指定模型 {current_model} 遇到限流，切换到备用模型: {backup_model}")
+                        # 递归调用，但不再指定模型，让系统使用备用模型
+                        return call_llm_api(messages, context, stream, backup_model)
+            else:
+                # 原有的备用模型逻辑
+                for backup_model in backup_models:
+                    if backup_model != current_model:
+                        print(f"遇到限流，切换到备用模型: {backup_model}")
+                        model = backup_model
+                        # 递归调用自身，使用新模型重试
+                        return call_llm_api(messages, context, stream)
                     
         raise Exception(f"{context}失败: {str(e)}")
 
@@ -180,10 +190,11 @@ def check_content_filter(text: str) -> bool:
         print(f"Error checking content filters: {e}")
         return False
 
-def pre_judge_person(topic: str) -> bool:
+def pre_judge_person(topic: str, selected_model: str = None) -> bool:
     """
     预判主题是否为人物
     :param topic: 主题
+    :param selected_model: 指定使用的模型
     :return: 如果主题为人物返回True，否则返回False
     """
     messages = [{
@@ -192,7 +203,8 @@ def pre_judge_person(topic: str) -> bool:
     }]
     response_text = call_llm_api(
         messages,
-        context="预判主题是否为人物"
+        context="预判主题是否为人物",
+        selected_model=selected_model
     )
     response_data = parse_json_response(
         response_text,
@@ -200,13 +212,14 @@ def pre_judge_person(topic: str) -> bool:
     )   
     return response_data["result"] == "1"  # 确保返回布尔值
 
-def generate_concepts(topic: str, count: int = 10, is_person: bool = False, stream: bool = False):
+def generate_concepts(topic: str, count: int = 10, is_person: bool = False, stream: bool = False, selected_model: str = None):
     """
     生成概念，可以选择流式输出
     :param topic: 主题
     :param count: 概念数量
     :param is_person: 是否为人物类型，默认为False
     :param stream: 是否流式输出，默认为False
+    :param selected_model: 指定使用的模型
     :return: 若 stream 为 False，则返回概念字典；否则返回生成器，逐块yield生成的文本
     """
     # 预判主题是否为人物 - 移除这里的判断，使用传入的is_person参数
@@ -225,7 +238,7 @@ def generate_concepts(topic: str, count: int = 10, is_person: bool = False, stre
     
     if stream:
         accumulated_text = ""  # 用于累积文本进行过滤检查
-        stream_gen = call_llm_api(messages, f"生成主体 '{topic}' 相关的节点", stream=True)
+        stream_gen = call_llm_api(messages, f"生成主体 '{topic}' 相关的节点", stream=True, selected_model=selected_model)
         for chunk in stream_gen:
             accumulated_text += chunk
             # 检查每个新chunk是否包含过滤词
@@ -236,7 +249,7 @@ def generate_concepts(topic: str, count: int = 10, is_person: bool = False, stre
     else:
         # 非流式模式下，分块接收并检查内容
         accumulated_text = ""
-        stream_gen = call_llm_api(messages, f"生成主体 '{topic}' 相关的节点", stream=True)
+        stream_gen = call_llm_api(messages, f"生成主体 '{topic}' 相关的节点", stream=True, selected_model=selected_model)
         for chunk in stream_gen:
             # 检查每个新chunk是否包含过滤词
             if check_content_filter(chunk):
@@ -252,11 +265,12 @@ def generate_concepts(topic: str, count: int = 10, is_person: bool = False, stre
             error_context=f"处理主体 '{topic}' 的概念生成结果时"
         )
 
-def generate_relationships(concepts: dict, is_person: bool = False) -> list:
+def generate_relationships(concepts: dict, is_person: bool = False, selected_model: str = None) -> list:
     """
     生成关系
     :param concepts: 概念字典
     :param is_person: 是否为人物类型，默认为False
+    :param selected_model: 指定使用的模型
     :return: 关系列表
     """
     try:
@@ -277,7 +291,8 @@ def generate_relationships(concepts: dict, is_person: bool = False) -> list:
         
         response_text = call_llm_api(
             messages=messages,
-            context="生成概念关系"
+            context="生成概念关系",
+            selected_model=selected_model
         )
         
         # 打印原始响应，用于调试
@@ -447,12 +462,13 @@ def create_network_data(concepts: dict, relationships: list) -> dict:
     }
 
 @retry_on_error(max_retries=3)
-def generate_new_concept_detail(new_concept_input: str, is_person: bool = False) -> dict:
+def generate_new_concept_detail(new_concept_input: str, is_person: bool = False, selected_model: str = None) -> dict:
     """
     根据用户输入的新概念生成详细描述
     要求格式为："概念名称": "概念介绍"
     :param new_concept_input: 用户输入的新概念
     :param is_person: 是否为人物类型
+    :param selected_model: 指定使用的模型
     """
     try:
         if is_person:
@@ -473,7 +489,8 @@ def generate_new_concept_detail(new_concept_input: str, is_person: bool = False)
         response_text = call_llm_api(
             messages,
             context=f"生成新概念 '{new_concept_input}' 的描述",
-            stream=False
+            stream=False,
+            selected_model=selected_model
         )
         result = parse_json_response(
             response_text,

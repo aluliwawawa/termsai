@@ -347,8 +347,39 @@ button:disabled {
     white-space: nowrap;
 }
 
+/* 生成控件容器 - 同一排布局 */
+.generate-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px; /* 缩小间距 */
+}
+
+#llm-selector {
+    padding: 12px 16px; /* 与按钮高度一致 */
+    border: 2px solid var(--border-color);
+    border-radius: 4px; /* 与按钮圆角一致 */
+    font-size: 14px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    height: 44px; /* 明确设置高度 */
+    box-sizing: border-box;
+}
+
+#llm-selector:hover {
+    border-color: var(--primary-color);
+}
+
+#llm-selector:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
 #generate-btn {
-    align-self: center;
     padding: 12px 24px;
     background-color: var(--primary-color);
     color: white;
@@ -357,7 +388,8 @@ button:disabled {
     cursor: pointer;
     font-size: 16px;
     white-space: nowrap;
-    max-width: 100%;
+    flex: 1;
+    height: 44px; /* 与选择器高度一致 */
     box-sizing: border-box;
 }
 
@@ -400,11 +432,21 @@ button:disabled {
         max-width: none;
     }
     
+    /* PC端生成控件保持同一排布局 */
+    .generate-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 15px; /* 缩小间距 */
+    }
+
+    #llm-selector {
+        min-width: 120px;
+    }
+
     #generate-btn {
-        width: 100%; /* 与学习主题输入框等宽 */
+        flex: 1;
         box-sizing: border-box;
-        margin-top: 15px;
-        align-self: stretch; /* 填满父容器的宽度 */
     }
 
     #download-btn,
@@ -490,10 +532,22 @@ button:disabled {
         -webkit-overflow-scrolling: touch;
     }
     
+    /* 移动端生成控件样式 */
+    .generate-controls {
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    #llm-selector {
+        width: 100%;
+        order: 1;
+    }
+
     #generate-btn {
         width: 100%;
-        margin: 15px auto 0;
-        display: block;
+        order: 2;
+        flex: none;
     }
     
     .input-row {

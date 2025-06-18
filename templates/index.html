@@ -74,7 +74,13 @@
                             </div>
                         </div>
                     </div>
-                    <button id="generate-btn">生成图谱</button>
+                    <div class="generate-controls">
+                        <select id="llm-selector">
+                            <option value="Pro/deepseek-ai/DeepSeek-V3">DeepSeek</option>
+                            <option value="gpt-4o">ChatGPT</option>
+                        </select>
+                        <button id="generate-btn">生成图谱</button>
+                    </div>
                 </div>
                 <div id="info-box" style="white-space: pre-line;">
                     <div class="info-content"></div>
