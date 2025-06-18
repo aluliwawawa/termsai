@@ -40,7 +40,7 @@ def serve_language_file(language, filename):
         return send_from_directory(f'language/{language}', filename)
     except Exception as e:
         logging.error(f"提供语言文件时出错: {str(e)}")
-        return jsonify({'error': 'Language file not found'}), 404
+        return jsonify({'error_key': 'server_language_file_error'}), 404
 
 @app.route('/generate_stream', methods=['POST'])
 def generate_stream():
@@ -48,9 +48,9 @@ def generate_stream():
     count = request.json.get('count', 10)
     
     if not topic:
-        return jsonify({'error': '请输入主体'}), 400
+        return jsonify({'error_key': 'server_please_enter_topic'}), 400
     if not 5 <= count <= 20:
-        return jsonify({'error': '节点数量必须在5到20之间'}), 400
+        return jsonify({'error_key': 'server_node_count_range'}), 400
     
     def generate():
         try:
@@ -62,7 +62,7 @@ def generate_stream():
                 yield "data: " + json.dumps({
                     'status': 'complete',
                     'progress': 100,
-                    'message': '正在获取关系图谱...',
+                    'message_key': 'server_getting_graph',
                     'data': {
                         'graph_id': cached_graph['id'],
                         'concepts': cached_graph['concepts'],
@@ -84,7 +84,7 @@ def generate_stream():
             yield "data: " + json.dumps({
                 'status': 'generating_concepts',
                 'progress': 20,
-                'message': '正在初始化...\n接下来可能需要几分钟'
+                'message_key': 'server_initializing'
             }) + '\n\n'
             
             accumulated_text = ""
@@ -107,7 +107,7 @@ def generate_stream():
                     progress_value = min(progress_value, 70)
                     dots = '.' * ((dot_phase % 3) + 1)
                     dot_phase += 1
-                    display_message = "正在生成节点:\n" + "\n".join(generated_concepts) + dots
+                    display_message = "server_generating_nodes" + "\n".join(generated_concepts) + dots
                     yield "data: " + json.dumps({
                         'status': 'generating_concepts_partial',
                         'progress': progress_value,
@@ -119,7 +119,7 @@ def generate_stream():
             yield "data: " + json.dumps({
                 'status': 'generating_relationships',
                 'progress': 70,
-                'message': '正在分析节点关系...\n节点太多的话可能需时几分钟'
+                'message_key': 'server_analyzing_relationships'
             }) + '\n\n'
             
             # 解析完整的概念 JSON 文本
@@ -139,7 +139,7 @@ def generate_stream():
             yield "data: " + json.dumps({
                 'status': 'complete',
                 'progress': 100,
-                'message': '生成完成！',
+                'message_key': 'server_generation_complete',
                 'data': {
                     'graph_id': graph_id,
                     'concepts': concepts,
@@ -172,15 +172,15 @@ def feedback():
         
         # 参数校验
         if graph_id is None:
-            return jsonify({'error': '缺少 graph_id 参数'}), 400
+            return jsonify({'error_key': 'server_missing_graph_id'}), 400
         if is_like is None:
-            return jsonify({'error': '缺少 is_like 参数'}), 400
+            return jsonify({'error_key': 'server_missing_is_like'}), 400
         if not user_id:
-            return jsonify({'error': '用户 ID 无效'}), 400
+            return jsonify({'error_key': 'server_invalid_user_id'}), 400
         if not topic:
-            return jsonify({'error': '缺少主题参数'}), 400
+            return jsonify({'error_key': 'server_missing_topic'}), 400
         if not count or not isinstance(count, int) or not 5 <= count <= 20:
-            return jsonify({'error': '节点数量无效'}), 400
+            return jsonify({'error_key': 'server_invalid_node_count'}), 400
         
         result = DatabaseManager.update_feedback(graph_id, is_like)
         
@@ -210,7 +210,7 @@ def feedback():
                         return jsonify({
                             'status': 'complete',
                             'progress': 100,
-                            'message': '获取缓存图谱成功',
+                            'message_key': 'server_cache_success',
                             'data': {
                                 'graph_id': next_graph['id'],
                                 'concepts': next_graph['concepts'],
@@ -226,7 +226,7 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'initializing',
                             'progress': 10,
-                            'message': '正在初始化...\n接下来可能需要几分钟'
+                            'message_key': 'server_initializing'
                         }) + '\n\n'
                         
                         # 根据请求中是否包含 base_graph_id，选择正确的基础图谱
@@ -239,7 +239,8 @@ def feedback():
                             if not graph:
                                 yield "data: " + json.dumps({
                                     'status': 'error',
-                                    'message': f'图谱ID {graph_id} 不存在'
+                                    'message_key': 'server_graph_not_exist',
+                                    'graph_id': graph_id
                                 }) + '\n\n'
                                 return
                             topic = graph.topic
@@ -253,14 +254,14 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'generating_new_concept',
                             'progress': 30,
-                            'message': '正在生成新节点详细描述'
+                            'message_key': 'server_generating_node_desc'
                         }) + '\n\n'
                         
                         new_concept_input = request.json.get('added_concept_data', {}).get('new_concept')
                         if not new_concept_input:
                             yield "data: " + json.dumps({
                                 'status': 'error',
-                                'message': '缺少新增节点数据'
+                                'message_key': 'server_missing_new_node'
                             }) + '\n\n'
                             return
                         
@@ -271,13 +272,13 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'merging_concepts',
                             'progress': 50,
-                            'message': '正在合并节点'
+                            'message_key': 'server_merging_nodes'
                         }) + '\n\n'
                         
                         yield "data: " + json.dumps({
                             'status': 'generating_relationships',
                             'progress': 70,
-                            'message': '正在分析节点关系...\n节点太多的话可能需时几分钟'
+                            'message_key': 'server_analyzing_relationships'
                         }) + '\n\n'
                         
                         updated_relationships = generate_relationships(updated_concepts, is_person)
@@ -296,7 +297,7 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'complete',
                             'progress': 100,
-                            'message': '新增节点成功，图谱已更新',
+                            'message_key': 'server_new_node_success',
                             'data': {
                                 'graph_id': new_graph_id,
                                 'concepts': updated_concepts,
@@ -324,7 +325,7 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'generating_concepts',
                             'progress': 20,
-                            'message': '正在初始化...\n接下来可能需要几分钟'
+                            'message_key': 'server_initializing'
                         }) + '\n\n'
                         
                         accumulated_text = ""
@@ -345,7 +346,7 @@ def feedback():
                                 progress_value = min(progress_value, 70)
                                 dots = '.' * ((dot_phase % 3) + 1)
                                 dot_phase += 1
-                                display_message = "正在生成节点:\n" + "\n".join(generated_concepts) + dots
+                                display_message = "server_generating_nodes" + "\n".join(generated_concepts) + dots
                                 yield "data: " + json.dumps({
                                     'status': 'generating_concepts_partial',
                                     'progress': progress_value,
@@ -361,7 +362,7 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'generating_relationships',
                             'progress': 70,
-                            'message': '正在分析节点关系...\n节点太多的话可能需时几分钟'
+                            'message_key': 'server_analyzing_relationships'
                         }) + '\n\n'
                         
                         relationships = generate_relationships(concepts, is_person)
@@ -380,7 +381,7 @@ def feedback():
                         yield "data: " + json.dumps({
                             'status': 'complete',
                             'progress': 100,
-                            'message': '生成完成！',
+                            'message_key': 'server_generation_complete',
                             'data': {
                                 'graph_id': new_graph_id,
                                 'concepts': concepts,
@@ -417,7 +418,7 @@ def add_concept():
         graph_id = request.json.get('graph_id')
         new_concept_input = request.json.get('new_concept')
         if not graph_id or not new_concept_input:
-            return jsonify({'error': '缺少必要参数'}), 400
+            return jsonify({'error_key': 'server_missing_params'}), 400
 
         def generate():
             try:
@@ -427,7 +428,8 @@ def add_concept():
                     if not graph:
                         yield "data: " + json.dumps({
                             'status': 'error',
-                            'message': f'图谱ID {graph_id} 不存在'
+                            'message_key': 'server_graph_not_exist',
+                            'graph_id': graph_id
                         }) + '\n\n'
                         return
                     topic = graph.topic
@@ -444,14 +446,14 @@ def add_concept():
                 yield "data: " + json.dumps({
                     'status': 'initializing',
                     'progress': 10,
-                    'message': '正在初始化...\n接下来可能需要几分钟'
+                    'message_key': 'server_initializing'
                 }) + '\n\n'
                 
                 # 第二阶段：生成新概念描述
                 yield "data: " + json.dumps({
                     'status': 'generating_new_concept',
                     'progress': 30,
-                    'message': '正在生成新节点详细描述'
+                    'message_key': 'server_generating_node_desc'
                 }) + '\n\n'
                 new_concept_detail = generate_new_concept_detail(new_concept_input, is_person)
     
@@ -461,14 +463,14 @@ def add_concept():
                 yield "data: " + json.dumps({
                     'status': 'merging_concepts',
                     'progress': 50,
-                    'message': '正在合并节点'
+                    'message_key': 'server_merging_nodes'
                 }) + '\n\n'
     
                 # 第四阶段：生成关联关系
                 yield "data: " + json.dumps({
                     'status': 'generating_relationships',
                     'progress': 70,
-                    'message': '正在分析节点关系...\n节点太多的话可能需时几分钟'
+                    'message_key': 'server_analyzing_relationships'
                 }) + '\n\n'
                 updated_relationships = generate_relationships(updated_concepts, is_person)
     
@@ -477,7 +479,7 @@ def add_concept():
                 yield "data: " + json.dumps({
                     'status': 'finalizing',
                     'progress': 90,
-                    'message': '正在生成网络数据'
+                    'message_key': 'server_generating_network_data'
                 }) + '\n\n'
     
                 # 第六阶段：保存更新后的图谱
@@ -492,7 +494,7 @@ def add_concept():
                 yield "data: " + json.dumps({
                     'status': 'complete',
                     'progress': 100,
-                    'message': '新增节点成功，图谱已更新',
+                    'message_key': 'server_new_node_success',
                     'data': {
                         'graph_id': new_graph_id,
                         'concepts': updated_concepts,
@@ -512,23 +514,23 @@ def add_concept():
         return Response(stream_with_context(generate()), mimetype='text/event-stream')
     except Exception as e:
         logging.error(f"处理添加概念请求出错: {str(e)}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error_key': 'server_add_concept_error'}), 500
 
 @app.route('/search_graph', methods=['POST'])
 def search_graph():
     try:
         graph_id = request.json.get('graph_id')
         if not graph_id:
-            return jsonify({'error': '缺少图谱编号参数'}), 400
+            return jsonify({'error_key': 'server_missing_graph_id_param'}), 400
         try:
             graph_id = int(graph_id)
         except ValueError:
-            return jsonify({'error': '图谱编号必须为整数'}), 400
+            return jsonify({'error_key': 'server_graph_id_must_be_int'}), 400
 
         with Session() as session:
             graph = session.query(KnowledgeGraph).get(graph_id)
             if not graph:
-                return jsonify({'error': f'未找到图谱，图谱编号: {graph_id}'}), 404
+                return jsonify({'error_key': 'server_graph_not_found', 'graph_id': graph_id}), 404
             network_data = create_network_data(graph.concepts, graph.relationships)
             # 获取is_person值，如果不存在则默认为False
             is_person = getattr(graph, 'is_person', False)
@@ -545,7 +547,7 @@ def search_graph():
             })
     except Exception as e:
         logging.error(f"搜索图谱时出错: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error_key": "server_search_graph_error"}), 500
 
 @app.route('/default_graph')
 def get_default_graph():
@@ -563,10 +565,10 @@ def get_default_graph():
                     "is_person": is_person  # 返回is_person标记
                 }
             })
-        return jsonify({"error": "没有找到默认图谱"})
+        return jsonify({"error_key": "server_no_default_graph"})
     except Exception as e:
         logging.error(f"加载默认图谱时出错: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)})
+        return jsonify({"error_key": "server_default_graph_error"})
 
 @app.route('/check_filter', methods=['POST'])
 def check_filter():
@@ -592,13 +594,13 @@ def get_graph():
         # 从 URL 参数中获取 graph_id，并转换成整型
         graph_id = request.args.get('graph_id', type=int)
         if not graph_id:
-            return jsonify({"error": "缺少 graph_id 参数"}), 400
+            return jsonify({"error_key": "server_missing_graph_id_get"}), 400
 
         # 查询数据库获取对应的图谱对象
         with Session() as session:
             graph = session.query(KnowledgeGraph).get(graph_id)
             if not graph:
-                return jsonify({"error": f"图谱ID {graph_id} 不存在"}), 404
+                return jsonify({"error_key": "server_graph_not_exist", "graph_id": graph_id}), 404
 
             # 如果 concepts 是 JSON 格式字符串，则解析为 dict（否则直接使用）
             try:
@@ -607,7 +609,7 @@ def get_graph():
                 else:
                     concepts_dict = graph.concepts
             except Exception as e:
-                return jsonify({"error": f"解析图谱 concepts 错误：{str(e)}"}), 500
+                return jsonify({"error_key": "server_parse_concepts_error", "error": str(e)}), 500
 
             # 生成网络数据
             network_data = create_network_data(graph.concepts, graph.relationships)
@@ -627,7 +629,7 @@ def get_graph():
             return jsonify(result)
     except Exception as e:
         logging.error(f"获取图谱时出错: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error_key": "server_get_graph_error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

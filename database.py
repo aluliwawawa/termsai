@@ -147,14 +147,11 @@ class DatabaseManager:
         获取默认的知识图谱（主题为"人工智能"，概念数量为20，评分最高的）
         """
         with Session() as session:
-            print("正在查询默认图谱...")  # 添加调试日志
             graph = session.query(KnowledgeGraph)\
                 .filter(KnowledgeGraph.topic == "人工智能")\
                 .filter(KnowledgeGraph.concept_count == 12)\
                 .order_by(desc(KnowledgeGraph.score))\
                 .first()
-            
-            print(f"查询结果: {'找到图谱' if graph else '未找到图谱'}")  # 添加调试日志
             
             if graph:
                 return graph.to_dict()

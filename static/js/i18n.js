@@ -18,18 +18,16 @@ class I18nManager {
     }
 
     async init() {
-        // 从localStorage获取保存的语言设置
-        const savedLanguage = localStorage.getItem('termsai_language');
-        if (savedLanguage && this.supportedLanguages[savedLanguage]) {
-            this.currentLanguage = savedLanguage;
-        }
-        
+        // 始终默认使用中文，不从localStorage读取
+        this.currentLanguage = 'zh';
+        localStorage.setItem('termsai_language', 'zh');
+
         // 加载当前语言的翻译文件
         await this.loadTranslations(this.currentLanguage);
-        
+
         // 应用翻译
         this.applyTranslations();
-        
+
         // 创建语言选择器
         this.createLanguageSelector();
     }
@@ -40,7 +38,7 @@ class I18nManager {
             if (response.ok) {
                 this.translations = await response.json();
             } else {
-                console.error(`Failed to load translations for ${language}`);
+                console.error(`Failed to load translations for ${language}, status: ${response.status}`);
                 // 如果加载失败，尝试加载中文作为后备
                 if (language !== 'zh') {
                     const fallbackResponse = await fetch('/language/zh/translation.json');
@@ -55,6 +53,12 @@ class I18nManager {
     }
 
     createLanguageSelector() {
+        // 检查是否已经存在语言选择器
+        const existingSelector = document.querySelector('.language-selector');
+        if (existingSelector) {
+            existingSelector.remove();
+        }
+
         // 创建语言选择器容器
         const languageSelector = document.createElement('div');
         languageSelector.className = 'language-selector';
@@ -89,14 +93,12 @@ class I18nManager {
     }
 
     async changeLanguage(language) {
-        if (language === this.currentLanguage) return;
-        
         this.currentLanguage = language;
         localStorage.setItem('termsai_language', language);
-        
+
         // 加载新语言的翻译
         await this.loadTranslations(language);
-        
+
         // 应用翻译
         this.applyTranslations();
     }
@@ -145,7 +147,12 @@ class I18nManager {
         }
 
         // 更新标签文本
-        const nodeCountLabel = document.querySelector('.input-group label');
+        const topicLabel = document.querySelector('.input-group:first-child label');
+        if (topicLabel && this.translations.analysisTopic) {
+            topicLabel.textContent = this.translations.analysisTopic + '：';
+        }
+
+        const nodeCountLabel = document.querySelector('.input-group.number-input label');
         if (nodeCountLabel && this.translations.nodeCount) {
             nodeCountLabel.textContent = this.translations.nodeCount + '：';
         }
@@ -157,6 +164,9 @@ class I18nManager {
 
         // 特殊处理一些复杂的元素
         this.updateComplexElements();
+
+        // 重新翻译当前显示的错误信息
+        this.retranslateCurrentMessages();
     }
 
     updateComplexElements() {
@@ -210,16 +220,33 @@ class I18nManager {
         }
     }
 
+    retranslateCurrentMessages() {
+        // 重新翻译信息框中的消息
+        const infoBox = document.getElementById('info-box');
+        if (infoBox && infoBox.textContent) {
+            const currentText = infoBox.textContent;
+
+            // 检查是否是已知的服务器错误消息
+            if (currentText.includes('没有找到默认图谱') ||
+                currentText.includes('No default graph found') ||
+                currentText.includes('Kein Standard-Graph gefunden') ||
+                currentText.includes('Aucun graphe par défaut trouvé') ||
+                currentText.includes('No se encontró gráfico predeterminado') ||
+                currentText.includes('デフォルトグラフが見つかりません') ||
+                currentText.includes('Граф по умолчанию не найден')) {
+                infoBox.textContent = this.t('server_no_default_graph');
+            }
+
+            // 可以添加更多的消息模式匹配
+        }
+    }
+
     // 获取翻译文本的方法
     t(key) {
         return this.translations[key] || key;
     }
 
-    // 临时测试德语的方法
-    testGerman() {
-        console.log('Testing German language...');
-        this.changeLanguage('de');
-    }
+
 }
 
 // 等待DOM加载完成后初始化

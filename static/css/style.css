@@ -768,7 +768,6 @@ button:disabled {
     white-space: nowrap; /* 防止文字换行 */
     overflow: hidden; /* 隐藏溢出内容 */
     text-overflow: ellipsis; /* 文字溢出时显示省略号 */
-    flex: 1; /* 让文字占据剩余空间 */
     min-width: 0; /* 允许flex项目缩小到内容以下 */
 }
 

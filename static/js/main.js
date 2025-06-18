@@ -14,6 +14,52 @@ function t(key, defaultText) {
     return (window.i18n && window.i18n.t) ? window.i18n.t(key) : defaultText;
 }
 
+// 处理服务器消息的翻译函数
+function translateServerMessage(data) {
+    if (data.message_key) {
+        let message = t(data.message_key, data.message_key);
+        // 处理带参数的消息
+        if (data.graph_id) {
+            message = message.replace('{graph_id}', data.graph_id);
+        }
+        if (data.error) {
+            message = message.replace('{error}', data.error);
+        }
+        return message;
+    }
+    if (data.message) {
+        // 处理动态消息（如"server_generating_nodes节点列表..."）
+        if (data.message.startsWith('server_generating_nodes')) {
+            const nodesList = data.message.substring('server_generating_nodes'.length);
+            return t('server_generating_nodes', '正在生成节点:\n') + nodesList;
+        }
+        return data.message;
+    }
+    return '';
+}
+
+// 处理服务器错误的翻译函数
+function translateServerError(data) {
+    if (data.error_key) {
+        let message = t(data.error_key, data.error_key);
+        // 处理带参数的错误消息
+        if (data.graph_id) {
+            message = message.replace('{graph_id}', data.graph_id);
+        }
+        if (data.error) {
+            message = message.replace('{error}', data.error);
+        }
+        return message;
+    }
+    if (data.error) {
+        return data.error;
+    }
+    if (data.message) {
+        return data.message;
+    }
+    return 'Unknown error';
+}
+
 // 标识当前图谱是否为新增概念生成的图谱（默认 false）
 window.isNewConceptGraph = false; 
 // 用来记录新增概念场景下上一轮用于 LLM 生成的请求数据，例如：{ topic:"xxx", count:10, ... }
@@ -322,10 +368,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log('Successfully parsed data:', data);
                             
                             if (data.status === 'error') {
-                                throw new Error(data.message);
+                                throw new Error(translateServerError(data));
                             }
-                            
-                            updateProgress(data.progress, data.message);
+
+                            updateProgress(data.progress, translateServerMessage(data));
                             
                             if (data.status === 'complete' && data.data) {
                                 if (loadingInterval) {
@@ -394,8 +440,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(responseText);
                     console.log('Parsed response data:', data);
                     
-                    if (data.error) {
-                        throw new Error(data.error);
+                    if (data.error || data.error_key) {
+                        throw new Error(translateServerError(data));
                     }
                     
                     if (data.data) {
@@ -564,10 +610,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log('Parsed data:', data);
                             
                             if (data.status === 'error') {
-                                throw new Error(data.message);
+                                throw new Error(translateServerError(data));
                             }
-                            
-                            updateProgress(data.progress, data.message);
+
+                            updateProgress(data.progress, translateServerMessage(data));
                             
                             if (data.status === 'complete' && data.data) {
                                 if (loadingInterval) {
@@ -838,9 +884,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('network-loading').style.display = 'flex';
             const response = await fetch('/default_graph');
             const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
+
+            if (data.error || data.error_key) {
+                throw new Error(translateServerError(data));
             }
     
             if (data.data) {
@@ -852,6 +898,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 feedbackButtons.style.display = 'none';
                 infoBox.textContent = t('clickNodeForDetails', '点击节点查看详细信息，图谱可缩放及下载');
             } else {
+                // 如果没有data.data，说明后端应该已经返回了error_key
+                // 这里不应该再抛出新的错误，而是让上面的错误处理逻辑处理
                 throw new Error(t('defaultGraphLoadFailed', "默认图谱加载失败: 没有找到默认图谱"));
             }
         } catch (error) {
@@ -896,8 +944,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const data = await response.json();
             
-            if (data.error) {
-                throw new Error(data.error);
+            if (data.error || data.error_key) {
+                throw new Error(translateServerError(data));
             }
             
             if (data.data) {
@@ -1024,15 +1072,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             // 若后端返回错误状态，抛出异常交由外层捕获
                             if (data.status === 'error') {
-                                throw new Error(data.message);
+                                throw new Error(translateServerError(data));
                             }
 
                             // 更新进度条
                             if (data.progress !== undefined) {
                                 progressBar.style.width = `${data.progress}%`;
                             }
-                            if (data.message) {
-                                updateProgress(data.progress, data.message);
+                            if (data.message || data.message_key) {
+                                updateProgress(data.progress, translateServerMessage(data));
                             }
 
                             // 如果状态为 complete，且有 data 字段，代表生成成功
@@ -1081,8 +1129,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(responseText);
                     console.log('Add concept parsed JSON response:', data);
 
-                    if (data.error) {
-                        throw new Error(data.error);
+                    if (data.error || data.error_key) {
+                        throw new Error(translateServerError(data));
                     }
                     if (data.data) {
                         currentGraphId = data.data.graph_id;
@@ -1220,15 +1268,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log('Search graph parsed data:', data); // 添加解析后数据调试信息
                             
                             if (data.status === 'error') {
-                                throw new Error(data.message);
+                                throw new Error(translateServerError(data));
                             }
 
                             // 更新进度条和消息
                             if (data.progress !== undefined) {
                                 progressBar.style.width = `${data.progress}%`;
                             }
-                            if (data.message) {
-                                updateProgress(data.progress, data.message);
+                            if (data.message || data.message_key) {
+                                updateProgress(data.progress, translateServerMessage(data));
                             }
                             
                             if (data.status === 'complete' && data.data) {
@@ -1264,8 +1312,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(responseText);
                     console.log('Search graph parsed JSON response:', data);
                     
-                    if (data.error) {
-                        throw new Error(data.error);
+                    if (data.error || data.error_key) {
+                        throw new Error(translateServerError(data));
                     }
                     
                     if (data.data) {
